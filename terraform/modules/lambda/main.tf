@@ -41,7 +41,10 @@ data archive_file lambda {
   )
 }
 
-resource aws_iam_role role { assume_role_policy = data.aws_iam_policy_document.assume.json }
+resource aws_iam_role role {
+  name               = "transcoding-api-${var.function_name}"
+  assume_role_policy = data.aws_iam_policy_document.assume.json
+}
 
 data aws_iam_policy_document assume {
   statement {

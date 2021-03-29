@@ -27,16 +27,31 @@ resource aws_apigatewayv2_stage apigateway {
 
 resource aws_cloudwatch_log_group apigateway { name = "/aws/apigateway/${aws_apigatewayv2_api.apigateway.id}" }
 
+resource aws_apigatewayv2_authorizer apigateway {
+  api_id                            = aws_apigatewayv2_api.apigateway.id
+  authorizer_type                   = "REQUEST"
+  name                              = "X-API-Key"
+  authorizer_credentials_arn        = aws_iam_role.apigateway.arn
+  authorizer_payload_format_version = "2.0"
+  authorizer_uri                    = module.lambda["authorizer"].invoke_arn
+  enable_simple_responses           = true
+  identity_sources                  = ["$request.header.X-API-Key"]
+}
+
 resource aws_apigatewayv2_route apigateway_post_job {
-  api_id    = aws_apigatewayv2_api.apigateway.id
-  route_key = "POST /job"
-  target    = "integrations/${aws_apigatewayv2_integration.apigateway_create_job.id}"
+  api_id             = aws_apigatewayv2_api.apigateway.id
+  route_key          = "POST /job"
+  target             = "integrations/${aws_apigatewayv2_integration.apigateway_create_job.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.apigateway.id
 }
 
 resource aws_apigatewayv2_route apigateway_get_job {
-  api_id    = aws_apigatewayv2_api.apigateway.id
-  route_key = "GET /job/{id}"
-  target    = "integrations/${aws_apigatewayv2_integration.apigateway_get_job.id}"
+  api_id             = aws_apigatewayv2_api.apigateway.id
+  route_key          = "GET /job/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.apigateway_get_job.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.apigateway.id
 }
 
 resource aws_apigatewayv2_integration apigateway_create_job {
@@ -55,7 +70,10 @@ resource aws_apigatewayv2_integration apigateway_get_job {
   credentials_arn        = aws_iam_role.apigateway.arn
 }
 
-resource aws_iam_role apigateway { assume_role_policy = data.aws_iam_policy_document.apigateway_assume.json }
+resource aws_iam_role apigateway {
+  name               = "transcoding-api-apigateway"
+  assume_role_policy = data.aws_iam_policy_document.apigateway_assume.json
+}
 
 data aws_iam_policy_document apigateway_assume {
   statement {
@@ -78,6 +96,7 @@ data aws_iam_policy_document apigateway {
   statement {
     actions = ["lambda:InvokeFunction"]
     resources = [
+      "${module.lambda["authorizer"].arn}:*",
       "${module.lambda["create-job"].arn}:*",
       "${module.lambda["get-job"].arn}:*",
     ]

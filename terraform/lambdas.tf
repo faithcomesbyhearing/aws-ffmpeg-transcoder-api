@@ -3,6 +3,7 @@ locals {
     TABLE_NAME = aws_dynamodb_table.dynamodb.id
     # STATE_MACHINE_ARN = aws_sfn_state_machine.sfn.arn
     STATE_MACHINE_ARN = "arn:${data.aws_partition.current.partition}:states:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stateMachine:transcode-${random_string.random.result}"
+    SECRET            = random_password.secret.result
   }
 
   layers = {
@@ -36,22 +37,18 @@ locals {
       actions   = ["states:StartExecution"]
       resources = [aws_sfn_state_machine.sfn.arn]
     }
-    LIST_IN_BUCKET = {
-      actions   = ["s3:ListBucket"]
-      resources = [aws_s3_bucket.s3_in.arn]
-    }
-    GET_IN_BUCKET = {
-      actions = [
-        "s3:GetObject"
-      ]
-      resources = ["${aws_s3_bucket.s3_in.arn}/*"]
-    }
-    PUT_OUT_BUCKET = {
-      actions = [
-        "s3:PutObject"
-      ]
-      resources = ["${aws_s3_bucket.s3_out.arn}/*"]
-    }
+    # LIST_IN_BUCKET = {
+    #   actions = ["s3:ListBucket"]
+    #   resources = [aws_s3_bucket.s3_in.arn]
+    # }
+    # GET_IN_BUCKET = {
+    #   actions = ["s3:GetObject"]
+    #   resources = ["${aws_s3_bucket.s3_in.arn}/*"]
+    # }
+    # PUT_OUT_BUCKET = {
+    #   actions = ["s3:PutObject"]
+    #   resources = ["${aws_s3_bucket.s3_out.arn}/*"]
+    # }
   }
 }
 

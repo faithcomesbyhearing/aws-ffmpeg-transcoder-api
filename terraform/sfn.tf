@@ -112,7 +112,10 @@ resource aws_sfn_state_machine sfn_chunk {
   })
 }
 
-resource aws_iam_role sfn { assume_role_policy = data.aws_iam_policy_document.sfn_assume.json }
+resource aws_iam_role sfn {
+  name               = "transcoding-api-sfn"
+  assume_role_policy = data.aws_iam_policy_document.sfn_assume.json
+}
 
 data aws_iam_policy_document sfn_assume {
   statement {
