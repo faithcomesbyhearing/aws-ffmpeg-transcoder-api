@@ -1,3 +1,6 @@
+variable in_bucket_arn { type = string }
+variable out_bucket_arn { type = string }
+
 locals {
   environment = {
     TABLE_NAME = aws_dynamodb_table.dynamodb.id
@@ -37,18 +40,18 @@ locals {
       actions   = ["states:StartExecution"]
       resources = [aws_sfn_state_machine.sfn.arn]
     }
-    # LIST_IN_BUCKET = {
-    #   actions = ["s3:ListBucket"]
-    #   resources = [aws_s3_bucket.s3_in.arn]
-    # }
-    # GET_IN_BUCKET = {
-    #   actions = ["s3:GetObject"]
-    #   resources = ["${aws_s3_bucket.s3_in.arn}/*"]
-    # }
-    # PUT_OUT_BUCKET = {
-    #   actions = ["s3:PutObject"]
-    #   resources = ["${aws_s3_bucket.s3_out.arn}/*"]
-    # }
+    LIST_IN_BUCKET = {
+      actions   = ["s3:ListBucket"]
+      resources = [var.in_bucket_arn]
+    }
+    GET_IN_BUCKET = {
+      actions   = ["s3:GetObject"]
+      resources = ["${var.in_bucket_arn}/*"]
+    }
+    PUT_OUT_BUCKET = {
+      actions   = ["s3:PutObject"]
+      resources = ["${var.out_bucket_arn}/*"]
+    }
   }
 }
 
@@ -67,13 +70,13 @@ module lambda {
   }
 
   layers = [
-    for k, v in local.layers : v
-    if contains(lookup(jsondecode(file("lambdas/${each.key}/package.json")).lambda, "layers", []), k)
+    for k in lookup(jsondecode(file("lambdas/${each.key}/package.json")).lambda, "layers", [])
+    : local.layers[k]
   ]
 
   statements = [
-    for k, v in local.statements : v
-    if contains(lookup(jsondecode(file("lambdas/${each.key}/package.json")).lambda, "statements", []), k)
+    for k in lookup(jsondecode(file("lambdas/${each.key}/package.json")).lambda, "statements", [])
+    : local.statements[k]
   ]
 }
 
