@@ -5,7 +5,7 @@ import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 import { Array, Literal, Number, Record, String, Union } from "runtypes";
 import { v4 as uuid } from "uuid";
 
-const dynamo = DynamoDBDocument.from(new DynamoDB({}));
+const dynamo = DynamoDBDocument.from(new DynamoDB({ maxAttempts: 8 }));
 
 const { TABLE_NAME } = process.env;
 

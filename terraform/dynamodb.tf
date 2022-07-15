@@ -5,6 +5,10 @@ resource aws_dynamodb_table dynamodb {
   stream_enabled   = true
   stream_view_type = "NEW_IMAGE"
 
+  # billing_mode   = "PROVISIONED"
+  # write_capacity = 5
+  # read_capacity  = 1
+
   attribute {
     name = "id"
     type = "S"

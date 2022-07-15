@@ -11,7 +11,7 @@ import { Readable } from "stream";
 import { Upload } from "@aws-sdk/lib-storage";
 
 const s3 = new S3({});
-const dynamo = DynamoDBDocument.from(new DynamoDB({ maxAttempts: 8 }));
+const dynamo = DynamoDBDocument.from(new DynamoDB({ maxAttempts: 64 }));
 
 const { TABLE_NAME } = process.env;
 
@@ -135,7 +135,7 @@ async function upload(Bucket: string, Key: string, filePath: string) {
   console.log(`Uploading ${filePath} to s3://${Bucket}/${Key}`);
   const upload = new Upload({
     client: s3,
-    params: { Bucket, Key, Body: fs.createReadStream(filePath) },
+    params: { Bucket, Key, Body: fs.createReadStream(filePath), ACL: 'bucket-owner-full-control' },
   });
   await upload.done();
 }

@@ -11,7 +11,7 @@ resource aws_lambda_function lambda {
   filename         = data.archive_file.lambda.output_path
   source_code_hash = data.archive_file.lambda.output_base64sha256
   handler          = "index.handler"
-  runtime          = "nodejs12.x"
+  runtime          = "nodejs14.x"
   publish          = true
   role             = aws_iam_role.role.arn
   layers           = var.layers
@@ -52,6 +52,13 @@ data aws_iam_policy_document assume {
     principals {
       type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::078432969830:user/ghopper"]
     }
   }
 }

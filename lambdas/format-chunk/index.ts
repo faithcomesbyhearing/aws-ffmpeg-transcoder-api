@@ -4,13 +4,18 @@ import { Array, Literal, Number, Record, String, Union } from "runtypes";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import assert from "assert";
+import path from "path";
 
 const s3 = new S3({});
-const dynamo = DynamoDBDocument.from(new DynamoDB({}));
+const dynamo = DynamoDBDocument.from(new DynamoDB({ maxAttempts: 64 }));
 
 const { TABLE_NAME } = process.env;
 
 const Job = Record({
+  chunk: Array(Record({
+    key: String,
+    index: Number,
+  })),
   id: String,
   status: Union(Literal("PENDING")),
   input: Record({
@@ -49,37 +54,48 @@ export const handler: Handler = async (event) => {
     );
   }
   const job = result.value;
-  const keys = [];
-  const { bucket: Bucket, key: Prefix } = job.input;
-  for await (const output of paginateListObjectsV2({ client: s3 }, { Bucket, Prefix })) {
-    for (const key of output.Contents?.map((x) => x.Key!) || []) {
-      if (!key.replace(`${Prefix}/`, "").includes("/") && !key.endsWith(".zip")) {
-        keys.push(key);
-      }
+
+  assert(job.chunk.length > 0, "Empty chunk");
+
+  const files = [];
+  for (const { key, index } of job.chunk) {
+    for (const output of job.output) {
+      const basename = path.parse(key).name;
+      const ext = {
+        mp3: "mp3",
+        mp4: "m4a",
+        webm: "webm",
+      }[output.container];
+      const outputKey = `${output.key}/${basename}.${ext}`;
+      files.push({
+        index,
+        status: "PENDING",
+        input: {
+          bucket: job.input.bucket,
+          key,
+        },
+        output: {
+          ...output,
+          key: outputKey,
+        },
+      });
     }
   }
 
-  assert(keys.length > 0, "No input files found");
-
-  await dynamo.update({
-    TableName: TABLE_NAME,
-    Key: { id: job.id },
-    ConditionExpression: "attribute_exists(id)",
-    UpdateExpression: "SET #remaining = :remaining, #files = :files",
-    ExpressionAttributeNames: {
-      "#remaining": "remaining",
-      "#files": "files",
-    },
-    ExpressionAttributeValues: {
-      ":remaining": keys.length * job.output.length,
-      ":files": keys.map((_, index) => ({ index })),
-    },
-  });
-
-  const chunks = [];
-  const indexed = keys.map((key, index) => ({ key, index }));
-  while (indexed.length > 0) {
-    chunks.push(indexed.splice(0, 10));
+  for (const file of files) {
+    await dynamo.update({
+      TableName: TABLE_NAME,
+      Key: { id: job.id },
+      ConditionExpression: "attribute_exists(id)",
+      UpdateExpression: `SET #files[${file.index}] = :file`,
+      ExpressionAttributeNames: {
+        "#files": "files",
+      },
+      ExpressionAttributeValues: {
+        ":file": file,
+      },
+    });
   }
-  return chunks;
+
+  return files.map((x) => ({ id: job.id, ...x }));
 };
