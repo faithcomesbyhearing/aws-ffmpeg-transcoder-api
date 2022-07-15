@@ -1,5 +1,5 @@
-variable in_bucket_arn { type = string }
-variable out_bucket_arn { type = string }
+variable in_bucket_arns { type = list(string) }
+variable out_bucket_arns { type = list(string) }
 
 locals {
   environment = {
@@ -42,15 +42,15 @@ locals {
     }
     LIST_IN_BUCKET = {
       actions   = ["s3:ListBucket"]
-      resources = [var.in_bucket_arn]
+      resources = var.in_bucket_arns
     }
     GET_IN_BUCKET = {
       actions   = ["s3:GetObject"]
-      resources = ["${var.in_bucket_arn}/*"]
+      resources = [for in_bucket_arn in var.in_bucket_arns : "${in_bucket_arn}/*"]
     }
     PUT_OUT_BUCKET = {
-      actions   = ["s3:PutObject"]
-      resources = ["${var.out_bucket_arn}/*"]
+      actions   = ["s3:PutObject", "s3:PutObjectAcl"]
+      resources = [for out_bucket_arn in var.out_bucket_arns : "${out_bucket_arn}/*"]
     }
   }
 }
@@ -64,10 +64,13 @@ module lambda {
   timeout       = lookup(jsondecode(file("lambdas/${each.key}/package.json")).lambda, "timeout", null)
   memory_size   = lookup(jsondecode(file("lambdas/${each.key}/package.json")).lambda, "memory_size", null)
 
-  environment = {
+  environment = merge({
     for k in lookup(jsondecode(file("lambdas/${each.key}/package.json")).lambda, "environment", [])
-    : k => local.environment[k]
-  }
+    : k => local.environment[k] if can(tostring(k))
+    },
+    [for k in lookup(jsondecode(file("lambdas/${each.key}/package.json")).lambda, "environment", [])
+    : k if ! can(tostring(k))]...
+  )
 
   layers = [
     for k in lookup(jsondecode(file("lambdas/${each.key}/package.json")).lambda, "layers", [])
@@ -92,4 +95,10 @@ resource aws_lambda_event_source_mapping start_job {
       destination_arn = aws_sns_topic.errors.arn
     }
   }
+}
+
+resource aws_lambda_permission invoke_create_zip {
+  action        = "lambda:InvokeFunction"
+  function_name = module.lambda["create-zip"].function_name
+  principal     = "869054869504"
 }

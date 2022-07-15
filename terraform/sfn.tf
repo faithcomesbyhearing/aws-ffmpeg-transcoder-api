@@ -9,25 +9,54 @@ resource aws_sfn_state_machine sfn {
         Resource   = module.lambda["get-input-files"].qualified_arn
         ResultPath = "$.chunks"
         Next       = "MapChunks"
+        Catch = [{
+          ErrorEquals = ["States.TaskFailed"]
+          ResultPath  = "$.error"
+          Next        = "Failure"
+        }]
       }
       MapChunks = {
-        Type       = "Map"
-        ItemsPath  = "$.chunks"
+        Type      = "Map"
+        ItemsPath = "$.chunks"
+        Parameters = {
+          "chunk.$"  = "$$.Map.Item.Value"
+          "id.$"     = "$.id"
+          "status.$" = "$.status"
+          "input.$"  = "$.input"
+          "output.$" = "$.output"
+        }
         ResultPath = "$.chunks"
         Next       = "Success"
+        Catch = [{
+          ErrorEquals = ["States.TaskFailed"]
+          ResultPath  = "$.error"
+          Next        = "Failure"
+        }]
         Iterator = {
-          StartAt = "TranscodeChunk"
+          StartAt = "FormatChunk"
           States = {
+            FormatChunk = {
+              Type     = "Task"
+              Resource = module.lambda["format-chunk"].qualified_arn
+              Next     = "TranscodeChunk"
+            }
             TranscodeChunk = {
               Type     = "Task"
               Resource = "arn:aws:states:::states:startExecution.sync:2"
-              End      = true
+              Next     = "Pass"
               Parameters = {
                 Input = {
                   "files.$"                                      = "$"
                   "AWS_STEP_FUNCTIONS_STARTED_BY_EXECUTION_ID.$" = "$$.Execution.Id"
                 }
                 StateMachineArn = aws_sfn_state_machine.sfn_chunk.arn
+              }
+            }
+            Pass = {
+              Type = "Pass"
+              End  = true
+              Parameters = {
+                result = "success"
               }
             }
           }
@@ -45,8 +74,31 @@ resource aws_sfn_state_machine sfn {
           ExpressionAttributeValues = { ":success" = "SUCCESS", ":pending" = "PENDING" }
         }
         Retry = [{
-          ErrorEquals = ["States.ALL"]
-          MaxAttempts = 8
+          ErrorEquals     = ["States.ALL"]
+          IntervalSeconds = 10
+          MaxAttempts     = 50
+          BackoffRate     = 1.1
+        }]
+        End = true
+      }
+      Failure = {
+        Type     = "Task"
+        Resource = "arn:aws:states:::dynamodb:updateItem"
+        Parameters = {
+          TableName                 = aws_dynamodb_table.dynamodb.id
+          Key                       = { id = { "S.$" = "$.id" } }
+          UpdateExpression          = "SET #status = :failed"
+          ConditionExpression       = "#status = :pending"
+          ExpressionAttributeNames  = { "#status" = "status" }
+          ExpressionAttributeValues = { ":failed" = "FAILED", ":pending" = "PENDING" }
+        }
+        Retry = [{
+          # ErrorEquals = ["States.ALL"]
+          # NOT DynamoDB.ConditionalCheckFailedException
+          ErrorEquals     = ["DynamoDB.AmazonDynamoDBException", "DynamoDB.ProvisionedThroughputExceededException"]
+          IntervalSeconds = 10
+          MaxAttempts     = 50
+          BackoffRate     = 1.1
         }]
         End = true
       }
@@ -67,9 +119,16 @@ resource aws_sfn_state_machine sfn_chunk {
         Iterator = {
           StartAt = "Transcode"
           States = {
+            # TODO maximum concurrency and catch and fallback wait state to retry?
             Transcode = {
               Type     = "Task"
               Resource = module.lambda["transcode"].qualified_arn
+              Retry = [{
+                ErrorEquals     = ["Lambda.TooManyRequestsException"]
+                IntervalSeconds = 10
+                MaxAttempts     = 50
+                BackoffRate     = 1.1
+              }]
               Catch = [{
                 ErrorEquals = ["States.ALL"]
                 ResultPath  = "$.error"
@@ -100,8 +159,12 @@ resource aws_sfn_state_machine sfn_chunk {
                 }
               }
               Retry = [{
-                ErrorEquals = ["States.ALL"]
-                MaxAttempts = 8
+                # ErrorEquals = ["States.ALL"]
+                # NOT DynamoDB.ConditionalCheckFailedException
+                ErrorEquals     = ["DynamoDB.AmazonDynamoDBException", "DynamoDB.ProvisionedThroughputExceededException"]
+                IntervalSeconds = 10
+                MaxAttempts     = 50
+                BackoffRate     = 1.1
               }]
               End = true
             }
@@ -139,6 +202,7 @@ data aws_iam_policy_document sfn {
     actions = ["lambda:InvokeFunction"]
     resources = [
       "${module.lambda["get-input-files"].arn}:*",
+      "${module.lambda["format-chunk"].arn}:*",
       "${module.lambda["transcode"].arn}:*"
     ]
   }

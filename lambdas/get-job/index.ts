@@ -3,7 +3,7 @@ import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import assert from "assert";
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
 
-const dynamo = DynamoDBDocument.from(new DynamoDB({}));
+const dynamo = DynamoDBDocument.from(new DynamoDB({ maxAttempts: 8 }));
 
 const { TABLE_NAME } = process.env;
 

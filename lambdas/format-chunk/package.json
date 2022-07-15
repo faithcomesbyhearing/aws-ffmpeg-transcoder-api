@@ -4,16 +4,19 @@
       "TABLE_NAME"
     ],
     "statements": [
-      "DYNAMODB_READ"
+      "LIST_IN_BUCKET",
+      "DYNAMODB_WRITE"
     ],
-    "timeout": 60
+    "timeout": 900
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.10.0",
+    "@aws-sdk/client-s3": "^3.10.0",
     "@aws-sdk/lib-dynamodb": "^3.10.0",
     "@tsconfig/node12": "^1.0.7",
     "@types/aws-lambda": "^8.10.71",
     "@types/node": "^12.12.6",
+    "runtypes": "^5.2.0",
     "typescript": "^4.1.3"
   }
 }

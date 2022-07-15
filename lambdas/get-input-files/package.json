@@ -6,7 +6,8 @@
     "statements": [
       "LIST_IN_BUCKET",
       "DYNAMODB_WRITE"
-    ]
+    ],
+    "timeout": 600
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.10.0",
