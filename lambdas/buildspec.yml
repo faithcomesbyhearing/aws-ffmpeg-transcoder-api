@@ -1,0 +1,15 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - echo Build started on `date`
+      - pwd
+      - make lambdas
+      - cd lambdas
+      - cd get-input-files;zip ../get_input_files.zip index.js package.json node_modules/**/*;cd ..
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing lambda function update... 
+      - aws lambda update-function-code --function-name transcoding-api-get-input-files-w9gxhplj7q9mju3h  --zip-file fileb://./get_input_files.zip

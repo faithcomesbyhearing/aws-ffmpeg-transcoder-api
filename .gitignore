@@ -2,3 +2,8 @@
 .terraform
 node_modules
 terraform.tfstate*
+.vscode/configurationCache.log
+.vscode/dryrun.log
+.vscode/settings.json
+.vscode/targets.log
+lambdas/format-chunk.zip

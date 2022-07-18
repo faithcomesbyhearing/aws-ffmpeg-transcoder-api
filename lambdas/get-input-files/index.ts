@@ -77,7 +77,8 @@ export const handler: Handler = async (event) => {
   });
 
   const chunks = [];
-  const indexed = keys.map((key, index) => ({ key, index }));
+  const foo = keys.length;
+  const indexed = keys.map((key, index) => ({ key, index, foo }));
   while (indexed.length > 0) {
     chunks.push(indexed.splice(0, 10));
   }
