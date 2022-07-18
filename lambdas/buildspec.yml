@@ -7,7 +7,9 @@ phases:
       - pwd
       - make lambdas
       - cd lambdas
-      - cd get-input-files;zip ../get_input_files.zip index.js package.json node_modules/**/*;cd ..
+      - cd get-input-files
+      - zip ../get_input_files.zip index.js package.json node_modules/**/*
+      - cd ..
   post_build:
     commands:
       - echo Build completed on `date`
