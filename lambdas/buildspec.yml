@@ -9,9 +9,14 @@ phases:
       - cd lambdas
       - cd get-input-files
       - zip ../get_input_files.zip index.js package.json node_modules/**/*
+      - cd format-chunk
+      - zip ../format-chunk.zip index.js package.json node_modules/**/*
       - cd ..
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing lambda function update... 
       - aws lambda update-function-code --function-name transcoding-api-get-input-files-w9gxhplj7q9mju3h  --zip-file fileb://./get_input_files.zip
+      - aws lambda publish-version --function-name transcoding-api-get-input-files-w9gxhplj7q9mju3h
+      - aws lambda update-function-code --function-name transcoding-api-format-chunk-w9gxhplj7q9mju3h  --zip-file fileb://./format_chunk.zip
+      - aws lambda publish-version --function-name transcoding-api-format-chunk-w9gxhplj7q9mju3h

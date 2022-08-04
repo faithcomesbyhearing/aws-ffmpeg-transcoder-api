@@ -13,6 +13,7 @@ const { TABLE_NAME } = process.env;
 const Job = Record({
   id: String,
   status: Union(Literal("PENDING")),
+  keyscount: Number, 
   input: Record({
     bucket: String,
     key: String,
@@ -60,6 +61,7 @@ export const handler: Handler = async (event) => {
   }
 
   assert(keys.length > 0, "No input files found");
+  job.keyscount = keys.length
 
   await dynamo.update({
     TableName: TABLE_NAME,
@@ -77,21 +79,7 @@ export const handler: Handler = async (event) => {
   });
 
   const chunks = [];
-  // const indexed = keys.map((key, index) => ({ key, index, foo }));
-  const indexed = [];
-  const keyslen = keys.length;
-  const outputLen = job.output.length;
-  const foo = keyslen*outputLen;  
-
-  console.log(`lambda getInputFiles. outputLen: ${outputLen}. keyslen: ${keyslen}. foo: ${foo}`)
-  for (let i = 0; i < outputLen; i++) {
-    for (let j= 0; j<keyslen; j++) {
-      let key = keys[j]
-      let index = j + (i*keyslen)   
-      indexed[index] = {key, index, foo}
-      console.log(`  trace... index : ${index}. contents: ${indexed[index]}`)
-    }
-  } 
+  const indexed = keys.map((key, index) => ({ key, index }));
   while (indexed.length > 0) {
     chunks.push(indexed.splice(0, 10));
   }
