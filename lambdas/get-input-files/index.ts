@@ -83,11 +83,13 @@ export const handler: Handler = async (event) => {
   const outputLen = job.output.length;
   const foo = keyslen*outputLen;  
 
+  console.log("lambda getInputFiles. outputLen: " + outputLen +". keyslen: " + keyslen+ ". foo: " + foo)
   for (let i = 0; i < outputLen; i++) {
     for (let j= 0; j<keyslen; j++) {
       let key = keys[j]
       let index = j + (i*keyslen)   
       indexed[index] = {key, index, foo}
+      console.log(" trace... index : " + index + ". contents: " + indexed[index])
     }
   } 
   while (indexed.length > 0) {
