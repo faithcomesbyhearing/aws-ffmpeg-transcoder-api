@@ -77,8 +77,19 @@ export const handler: Handler = async (event) => {
   });
 
   const chunks = [];
-  const foo = keys.length;
-  const indexed = keys.map((key, index) => ({ key, index, foo }));
+  // const indexed = keys.map((key, index) => ({ key, index, foo }));
+  const indexed = [];
+  const keyslen = keys.length;
+  const outputLen = job.output.length;
+  const foo = keyslen*outputLen;  
+
+  for (let i = 0; i < outputLen; i++) {
+    for (let j= 0; j<keyslen; j++) {
+      let key = keys[j]
+      let index = j + (i*keyslen)   
+      indexed[index] = {key, index, foo}
+    }
+  } 
   while (indexed.length > 0) {
     chunks.push(indexed.splice(0, 10));
   }
