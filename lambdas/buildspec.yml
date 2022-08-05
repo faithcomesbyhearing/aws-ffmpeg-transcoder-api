@@ -18,6 +18,6 @@ phases:
       - echo Build completed on `date`
       - echo Pushing lambda function update... 
       - aws lambda update-function-code --function-name transcoding-api-get-input-files-w9gxhplj7q9mju3h  --zip-file fileb://./get-input-files.zip
-      - aws lambda publish-version --function-name transcoding-api-get-input-files-w9gxhplj7q9mju3h
+      # - aws lambda publish-version --function-name transcoding-api-get-input-files-w9gxhplj7q9mju3h
       - aws lambda update-function-code --function-name transcoding-api-format-chunk-w9gxhplj7q9mju3h  --zip-file fileb://./format-chunk.zip
-      - aws lambda publish-version --function-name transcoding-api-format-chunk-w9gxhplj7q9mju3h
+      # - aws lambda publish-version --function-name transcoding-api-format-chunk-w9gxhplj7q9mju3h
