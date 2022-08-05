@@ -52,16 +52,58 @@ export const handler: Handler = async (event) => {
   const job = result.value;
   const keys = [];
   const { bucket: Bucket, key: Prefix } = job.input;
+  let tempCt = 0;
   for await (const output of paginateListObjectsV2({ client: s3 }, { Bucket, Prefix })) {
     for (const key of output.Contents?.map((x) => x.Key!) || []) {
       if (!key.replace(`${Prefix}/`, "").includes("/") && !key.endsWith(".zip")) {
         keys.push(key);
+        // temporary for testing
+        tempCt++
+        if (tempCt > 4){
+          break
+        }
+        // end temporary for testing
       }
     }
   }
 
   assert(keys.length > 0, "No input files found");
   job.keyscount = keys.length
+
+  // fanout
+  // - transfer to local vars so I can test externally
+  let outputLen = job.output.length
+  let keyslen = job.keyscount
+  let fanoutTotal = keyslen*outputLen; 
+  let output = job.output 
+  //--
+
+  const fanout = [];
+  let index = 0 ;
+  for (let j= 0; j<keyslen; j++) {
+    let key = keys[j]
+    for (let i = 0; i < outputLen; i++) {
+      let format = [ output[i].key, output[i].container,  output[i].codec,  output[i].bitrate].join("|")
+      fanout[index] = {key, index, format, fanoutTotal}
+      index++   
+    }
+  }
+
+  console.log("fanout")
+  console.log(fanout)
+  
+  // chunk
+  const CHUNKSIZE = 2
+  const chunks =[] 
+
+  while (fanout.length > 0) {
+    chunks.push(fanout.splice(0, CHUNKSIZE));
+  }
+
+  
+  console.log("chunks")
+  console.log(chunks)
+  //^^^ end local testing
 
   await dynamo.update({
     TableName: TABLE_NAME,
@@ -74,14 +116,11 @@ export const handler: Handler = async (event) => {
     },
     ExpressionAttributeValues: {
       ":remaining": keys.length * job.output.length,
-      ":files": keys.map((_, index) => ({ index })),
+      // ":files": keys.map((_, index) => ({ index })),
+      ":files": fanout
     },
   });
 
-  const chunks = [];
-  const indexed = keys.map((key, index) => ({ key, index }));
-  while (indexed.length > 0) {
-    chunks.push(indexed.splice(0, 10));
-  }
+
   return chunks;
 };

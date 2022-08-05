@@ -15,6 +15,7 @@ const Job = Record({
   chunk: Array(Record({
     key: String,
     index: Number,
+    format: String
   })),
   id: String,
   status: Union(Literal("PENDING")),
@@ -59,41 +60,35 @@ export const handler: Handler = async (event) => {
 
   assert(job.chunk.length > 0, "Empty chunk");
 
-  let data = await dynamo.get({
-    TableName: TABLE_NAME,
-    Key: { id: job.id },
-    ProjectionExpression: 'keyscount'    
-  })
-  //let keyscount = data.Item
-
-
   const files = [];
-  for (const { key, index } of job.chunk) {
-    for (const output of job.output) {
-
-
+  for (const { key, index, format } of job.chunk) {
+    const formatInfo = format.split("|");
+    let out_key = formatInfo[0]
+    let output = {"container": formatInfo[1], "codec": formatInfo[2], "bitrate": formatInfo[3] }
       const basename = path.parse(key).name;
       const ext = {
         mp3: "mp3",
         mp4: "m4a",
         webm: "webm",
       }[output.container];
-      const outputKey = `${output.key}/${basename}.${ext}`;
+      const outputKey = `${out_key}/${basename}.${ext}`;
 
-      let index2 = index * keyscount;
       files.push({
-        index2,
+        index,
         status: "PENDING",
         input: {
           bucket: job.input.bucket,
           key,
         },
         output: {
-          ...output,
-          key: outputKey,
+          bucket: job.output[0],
+          key:  outputKey,
+          container: formatInfo[1],
+          codec: formatInfo[2],
+          bitrate:  formatInfo[3],
         },
       });
-    }
+    //}
   }
 
   for (const file of files) {
