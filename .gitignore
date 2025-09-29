@@ -7,3 +7,8 @@ terraform.tfstate*
 .vscode/settings.json
 .vscode/targets.log
 lambdas/format-chunk.zip
+
+# Ignore local environment files
+lambdas/*/test-data/
+lambdas/*/.env
+CLAUDE.md
