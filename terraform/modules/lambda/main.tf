@@ -11,7 +11,7 @@ resource aws_lambda_function lambda {
   filename         = data.archive_file.lambda.output_path
   source_code_hash = data.archive_file.lambda.output_base64sha256
   handler          = "index.handler"
-  runtime          = "nodejs14.x"
+  runtime          = "nodejs22.x"
   publish          = true
   role             = aws_iam_role.role.arn
   layers           = var.layers

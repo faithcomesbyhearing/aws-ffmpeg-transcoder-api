@@ -10,7 +10,9 @@ import assert from "assert";
 import { Readable } from "stream";
 import { Upload } from "@aws-sdk/lib-storage";
 
-const s3 = new S3({});
+const s3 = new S3({
+  region: process.env.AWS_REGION || 'us-west-2',
+});
 const dynamo = DynamoDBDocument.from(new DynamoDB({ maxAttempts: 64 }));
 
 const { TABLE_NAME } = process.env;
@@ -33,6 +35,9 @@ type Event = {
 
 export const handler: Handler<Event> = async (event: Event, context) => {
   assert(TABLE_NAME, "Missing TABLE_NAME");
+
+  // Skip DynamoDB operations in test mode
+  const isTestMode = process.env.NODE_ENV === 'local';
 
   const dir = path.join(os.tmpdir(), context.awsRequestId);
   await fsp.mkdir(dir);
@@ -95,28 +100,33 @@ export const handler: Handler<Event> = async (event: Event, context) => {
     const outputDuration = await duration(outputFilePath);
     await upload(event.output.bucket, event.output.key, outputFilePath);
 
-    await dynamo.update({
-      TableName: TABLE_NAME,
-      Key: { id: event.id },
-      ConditionExpression: "attribute_exists(id)",
-      UpdateExpression: `SET #remaining = #remaining - :one, #files[${event.index}].#status = :success, files[${event.index}].#input.#duration = :inputDuration, #files[${event.index}].#output.#duration = :outputDuration`,
-      ExpressionAttributeNames: {
-        "#duration": "duration",
-        "#files": "files",
-        "#input": "input",
-        "#output": "output",
-        "#remaining": "remaining",
-        "#status": "status",
-      },
-      ExpressionAttributeValues: {
-        ":one": 1,
-        ":success": "SUCCESS",
-        ":inputDuration": inputDuration,
-        ":outputDuration": outputDuration,
-      },
-    });
+    if (!isTestMode) {
+      await dynamo.update({
+        TableName: TABLE_NAME,
+        Key: { id: event.id },
+        ConditionExpression: "attribute_exists(id)",
+        UpdateExpression: `SET #remaining = #remaining - :one, #files[${event.index}].#status = :success, files[${event.index}].#input.#duration = :inputDuration, #files[${event.index}].#output.#duration = :outputDuration`,
+        ExpressionAttributeNames: {
+          "#duration": "duration",
+          "#files": "files",
+          "#input": "input",
+          "#output": "output",
+          "#remaining": "remaining",
+          "#status": "status",
+        },
+        ExpressionAttributeValues: {
+          ":one": 1,
+          ":success": "SUCCESS",
+          ":inputDuration": inputDuration,
+          ":outputDuration": outputDuration,
+        },
+      });
+    } else {
+      console.log(`🧪 Test mode - env: ${process.env.NODE_ENV} Skipping DynamoDB update for job: ${event.id}, file: ${event.index}`);
+      console.log(`   Input duration: ${inputDuration}s, Output duration: ${outputDuration}s`);
+    }
   } finally {
-    await fsp.rmdir(dir, { recursive: true });
+    await fsp.rm(dir, { recursive: true, force: true });
   }
 };
 
@@ -127,7 +137,7 @@ async function download(Bucket: string, Key: string, filePath: string) {
       .on("error", reject)
       .pipe(fs.createWriteStream(filePath))
       .on("error", reject)
-      .on("finish", resolve)
+      .on("finish", () => resolve(undefined))
   );
 }
 
