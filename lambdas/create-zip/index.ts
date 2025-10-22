@@ -72,7 +72,9 @@ export const handler: Handler = async (event) => {
         if (files.length == 0) reject('No files were found');
 
         await Promise.all(files.map(({ key, name }) => limit(async () => {
-          const sourceStream: Readable = (await s3.getObject({ Bucket: sourceBucket, Key: key })).Body;
+          const response = await s3.getObject({ Bucket: sourceBucket, Key: key });
+          if (!response.Body) throw new Error(`No body found for key: ${key}`);
+          const sourceStream = response.Body as Readable;
           await new Promise(resolve => {
             sourceStream.once('end', resolve);
             archive.append(sourceStream, { name });
