@@ -9,6 +9,8 @@ import { unmarshall } from "./dynamodb";
 const sfn = new SFN({});
 const dynamo = DynamoDBDocument.from(new DynamoDB({}));
 
+const isLocal = process.env.NODE_ENV === 'local';
+
 const { STATE_MACHINE_ARN, TABLE_NAME } = process.env;
 
 const Job = Record({
@@ -41,6 +43,11 @@ const Job = Record({
 export const handler: DynamoDBStreamHandler = async (event) => {
   assert(STATE_MACHINE_ARN, "Missing SFN_ARN");
   assert(TABLE_NAME, "Missing TABLE_NAME");
+  
+  if (isLocal) {
+    console.log('Running in local mode - skipping AWS calls');
+  }
+  
   for (const record of event.Records) {
     if (record.eventName == "INSERT") {
       const data = unmarshall(record.dynamodb!.NewImage!);
@@ -52,18 +59,25 @@ export const handler: DynamoDBStreamHandler = async (event) => {
         continue;
       }
       const job = result.value;
-      const { executionArn } = await sfn.startExecution({
-        stateMachineArn: STATE_MACHINE_ARN,
-        input: JSON.stringify(job),
-      });
-      await dynamo.update({
-        TableName: TABLE_NAME,
-        Key: { id: job.id },
-        ConditionExpression: "attribute_exists(id)",
-        UpdateExpression: "SET #executionArn = :executionArn",
-        ExpressionAttributeNames: { "#executionArn": "executionArn" },
-        ExpressionAttributeValues: { ":executionArn": executionArn },
-      });
+      
+      if (isLocal) {
+        console.log(`Local mode: Would start execution for job ${job.id} with state machine ${STATE_MACHINE_ARN}`);
+        console.log(`Local mode: Would update DynamoDB table ${TABLE_NAME} with mock execution ARN`);
+        console.log('Job data:', JSON.stringify(job, null, 2));
+      } else {
+        const { executionArn } = await sfn.startExecution({
+          stateMachineArn: STATE_MACHINE_ARN,
+          input: JSON.stringify(job),
+        });
+        await dynamo.update({
+          TableName: TABLE_NAME,
+          Key: { id: job.id },
+          ConditionExpression: "attribute_exists(id)",
+          UpdateExpression: "SET #executionArn = :executionArn",
+          ExpressionAttributeNames: { "#executionArn": "executionArn" },
+          ExpressionAttributeValues: { ":executionArn": executionArn },
+        });
+      }
     }
   }
 };

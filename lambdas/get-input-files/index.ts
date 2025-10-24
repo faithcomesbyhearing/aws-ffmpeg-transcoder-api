@@ -5,6 +5,8 @@ import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import assert from "assert";
 
+const isLocal = process.env.NODE_ENV === 'local';
+
 const s3 = new S3({});
 const dynamo = DynamoDBDocument.from(new DynamoDB({}));
 
@@ -105,21 +107,26 @@ export const handler: Handler = async (event) => {
   console.log(chunks)
   //^^^ end local testing
 
-  await dynamo.update({
-    TableName: TABLE_NAME,
-    Key: { id: job.id },
-    ConditionExpression: "attribute_exists(id)",
-    UpdateExpression: "SET #remaining = :remaining, #files = :files",
-    ExpressionAttributeNames: {
-      "#remaining": "remaining",
-      "#files": "files",
-    },
-    ExpressionAttributeValues: {
-      ":remaining": keys.length * job.output.length,
-      // ":files": keys.map((_, index) => ({ index })),
-      ":files": fanout
-    },
-  });
+  if (isLocal) {
+    console.log('Running in local mode - skipping DynamoDB update');
+  }
+  else {
+    await dynamo.update({
+      TableName: TABLE_NAME,
+      Key: { id: job.id },
+      ConditionExpression: "attribute_exists(id)",
+      UpdateExpression: "SET #remaining = :remaining, #files = :files",
+      ExpressionAttributeNames: {
+        "#remaining": "remaining",
+        "#files": "files",
+      },
+      ExpressionAttributeValues: {
+        ":remaining": keys.length * job.output.length,
+        // ":files": keys.map((_, index) => ({ index })),
+        ":files": fanout
+      },
+    });
+  }
 
 
   return chunks;

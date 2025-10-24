@@ -9,6 +9,8 @@ import path from "path";
 const s3 = new S3({});
 const dynamo = DynamoDBDocument.from(new DynamoDB({ maxAttempts: 64 }));
 
+const isLocal = process.env.NODE_ENV === 'local';
+
 const { TABLE_NAME } = process.env;
 
 const Job = Record({
@@ -92,18 +94,22 @@ export const handler: Handler = async (event) => {
   }
 
   for (const file of files) {
-    await dynamo.update({
-      TableName: TABLE_NAME,
-      Key: { id: job.id },
-      ConditionExpression: "attribute_exists(id)",
-      UpdateExpression: `SET #files[${file.index}] = :file`,
-      ExpressionAttributeNames: {
-        "#files": "files",
-      },
-      ExpressionAttributeValues: {
-        ":file": file,
-      },
-    });
+    if (isLocal) {
+      console.log(`Local mode: Mocking DynamoDB update for file ${file.index}`);
+    } else {
+      await dynamo.update({
+        TableName: TABLE_NAME,
+        Key: { id: job.id },
+        ConditionExpression: "attribute_exists(id)",
+        UpdateExpression: `SET #files[${file.index}] = :file`,
+        ExpressionAttributeNames: {
+          "#files": "files",
+        },
+        ExpressionAttributeValues: {
+          ":file": file,
+        },
+      });
+    }
   }
 
   return files.map((x) => ({ id: job.id, ...x }));

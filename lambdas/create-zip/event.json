@@ -1,0 +1,4 @@
+{
+  "source": "s3://my-bucket/my-source/",
+  "target": "s3://my-bucket/my-target.zip"
+}

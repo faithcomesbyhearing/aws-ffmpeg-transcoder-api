@@ -1,0 +1,18 @@
+{
+  "id": "local-testing-event",
+  "status": "PENDING",
+  "keyscount": 3,
+  "input": {
+    "bucket": "local-bucket",
+    "key": "input/file1.mp4"
+  },
+  "output": [
+    {
+      "bucket": "local-bucket",
+      "key": "output/file1_transcoded.mp4",
+      "bitrate": 1000,
+      "container": "mp4",
+      "codec": "aac"
+    }
+  ]
+}
