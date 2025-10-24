@@ -6,3 +6,7 @@ layer/bin/ffmpeg:
 > curl https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz | tar xJ -C download
 > mv download/ffmpeg*/ffmpeg layer/bin
 > rm -r download
+
+.PHONY: clean
+clean:
+> rm -rf layer

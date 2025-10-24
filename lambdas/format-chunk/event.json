@@ -1,0 +1,30 @@
+{
+  "chunk": [
+    {
+      "index": 0,
+      "key": "input/video/chunk0.mp4",
+      "format": "xxx"
+    },
+    {
+      "index": 1,
+      "key": "input/video/chunk1.mp4",
+      "format": "xxx"
+    }
+  ],
+  "id": "job-1234",
+  "status": "PENDING",
+  "keyscount": 2,
+  "input": {
+    "bucket": "input-bucket",
+    "key": "input/video/source.mp4"
+  },
+  "output": [
+    {
+      "bucket": "output-bucket",
+      "key": "output/video/chunk0.mp4",
+      "bitrate": 1000000,
+      "container": "mp4",
+      "codec": "aac"
+    }
+  ]
+}

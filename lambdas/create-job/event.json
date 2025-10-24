@@ -1,0 +1,3 @@
+{
+  "body": "{\"input\":{\"bucket\":\"input-bucket\",\"key\":\"input/key\"},\"output\":[{\"bucket\":\"output-bucket\",\"key\":\"output/key\",\"bitrate\":123,\"container\":\"mp3\",\"codec\":\"mp3\"}]}"
+}
