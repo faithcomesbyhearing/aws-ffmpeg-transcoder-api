@@ -42,7 +42,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     if (!result.success) {
       return {
         statusCode: 400,
-        body: `${result.message} (Key: ${result.key})`,
+        body: `${result.message}`,
       };
     }
     assert(TABLE_NAME, "Missing TABLE_NAME");

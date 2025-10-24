@@ -16,7 +16,7 @@
     "@aws-sdk/client-sfn": "^3.10.0",
     "@aws-sdk/lib-dynamodb": "^3.10.0",
     "@aws-sdk/util-dynamodb": "^3.10.0",
-    "runtypes": "^5.2.0",
+    "runtypes": "6.7.0",
     "@tsconfig/node22": "^22.0.0",
     "@types/aws-lambda": "^8.10.152",
     "@types/node": "^22.0.0",
