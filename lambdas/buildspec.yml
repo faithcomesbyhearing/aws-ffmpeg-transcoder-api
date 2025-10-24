@@ -11,28 +11,28 @@ phases:
       - make lambdas
       - cd lambdas
       - cd authorizer
-      - zip ../authorizer.zip index.js package.json node_modules/**/*
+      - zip -r ../authorizer.zip index.js package.json node_modules/
       - cd ..
       - cd create-job
-      - zip ../create-job.zip index.js package.json node_modules/**/*
+      - zip -r ../create-job.zip index.js package.json node_modules/
       - cd ..
       - cd create-zip
-      - zip ../create-zip.zip index.js package.json node_modules/**/*
+      - zip -r ../create-zip.zip index.js package.json node_modules/
       - cd ..
       - cd format-chunk
-      - zip ../format-chunk.zip index.js package.json node_modules/**/*
+      - zip -r ../format-chunk.zip index.js package.json node_modules/
       - cd ..
       - cd get-input-files
-      - zip ../get-input-files.zip index.js package.json node_modules/**/*
+      - zip -r ../get-input-files.zip index.js package.json node_modules/
       - cd ..
       - cd get-job
-      - zip ../get-job.zip index.js package.json node_modules/**/*
+      - zip -r ../get-job.zip index.js package.json node_modules/
       - cd ..
       - cd start-job
-      - zip ../start-job.zip index.js dynamodb.js package.json node_modules/**/*
+      - zip -r ../start-job.zip index.js dynamodb.js package.json node_modules/
       - cd ..
       - cd transcode
-      - zip ../transcode.zip index.js package.json node_modules/**/*
+      - zip -r ../transcode.zip index.js package.json node_modules/
       - cd ..
   post_build:
     commands:
