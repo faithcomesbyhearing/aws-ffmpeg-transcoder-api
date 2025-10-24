@@ -7,10 +7,22 @@ const dynamo = DynamoDBDocument.from(new DynamoDB({ maxAttempts: 8 }));
 
 const { TABLE_NAME } = process.env;
 
+const isLocal = process.env.NODE_ENV === 'local';
+
 export const handler: APIGatewayProxyHandlerV2<any> = async (event) => {
   assert(TABLE_NAME, "Missing TABLE_NAME");
   console.log(event.pathParameters);
   const id = event?.pathParameters?.id;
+  
+  if (isLocal) {
+    console.log('Running in local mode - skipping DynamoDB call');
+    return {
+      id,
+      status: 'MOCK',
+      message: 'Local mode mock response'
+    };
+  }
+  
   return (
     await dynamo.get({
       TableName: TABLE_NAME,

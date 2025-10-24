@@ -8,6 +8,8 @@ import { Optional, Record, String, Array } from "runtypes";
 import { Readable } from "stream";
 import { parse } from 'path';
 
+const isLocal = process.env.NODE_ENV === 'local';
+
 const s3 = new S3({});
 
 const Event = Record({
@@ -45,22 +47,41 @@ export const handler: Handler = async (event) => {
 
     const archive = archiver('zip', {})
 
-    const upload = new Upload({
-      client: s3,
-      params: {
-        Bucket: targetBucket,
-        Key: targetPath.slice(1),
-        Body: archive,
-        ACL: 'bucket-owner-full-control',
-      }
-    });
-    const uploadDone = upload.done();
+    let upload: Upload | null = null;
+    let uploadDone: Promise<any> | null = null;
+    
+    if (isLocal) {
+      console.log('Running in local mode - skipping S3 upload');
+    } else {
+      upload = new Upload({
+        client: s3,
+        params: {
+          Bucket: targetBucket,
+          Key: targetPath.slice(1),
+          Body: archive,
+          ACL: 'bucket-owner-full-control',
+        }
+      });
+      uploadDone = upload.done();
+    }
+    
     const limit = pLimit(5);
     const files: { key: string, name: string }[] = [];
-    const Prefix = sourcePath.slice(1);
-    await Promise.all([
-      uploadDone,
-      new Promise<void>(async (resolve, reject) => {
+    
+    const promises: Promise<any>[] = [];
+    if (uploadDone) promises.push(uploadDone);
+    
+    if (isLocal) {
+      // In local mode, create a mock zip with no files
+      promises.push(new Promise<void>(async (resolve) => {
+        console.log('Local mode: Creating empty zip archive');
+        await archive.finalize();
+        resolve();
+      }));
+    } else {
+      // Production mode: Process S3 files
+      const Prefix = sourcePath.slice(1);
+      promises.push(new Promise<void>(async (resolve, reject) => {
         for await (const output of paginateListObjectsV2({ client: s3 }, { Bucket: sourceBucket, Prefix })) {
           files.push(
             ...output.Contents?.map((x) => x.Key!)
@@ -82,8 +103,10 @@ export const handler: Handler = async (event) => {
         })) || []);
         await archive.finalize();
         resolve();
-      }),
-    ]);
+      }));
+    }
+
+    await Promise.all(promises);
 
     return {
       status: 'SUCCESS',

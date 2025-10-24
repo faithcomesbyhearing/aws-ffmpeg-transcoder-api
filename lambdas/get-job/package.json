@@ -1,5 +1,4 @@
 {
-  "type": "module",
   "lambda": {
     "environment": [
       "TABLE_NAME"
