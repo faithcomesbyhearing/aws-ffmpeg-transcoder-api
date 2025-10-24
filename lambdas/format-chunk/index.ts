@@ -51,10 +51,10 @@ export const handler: Handler = async (event) => {
   const result = Job.validate(event);
   if (!result.success) {
     console.error(
-      `Record failed validation: ${result.message} (Key: ${result.key}) (Event: ${event})`
+      `Record failed validation: ${result.message} (Event: ${event})`
     );
     throw new Error(
-      `Record failed validation: ${result.message} (Key: ${result.key}) (Event: ${event})`
+      `Record failed validation: ${result.message} (Event: ${event})`
     );
   }
   const job = result.value;

@@ -54,7 +54,7 @@ export const handler: DynamoDBStreamHandler = async (event) => {
       const result = Job.validate(data);
       if (!result.success) {
         console.error(
-          `Record failed validation: ${result.message} (Key: ${result.key}) (Data: ${data})`
+          `Record failed validation: ${result.message} (Data: ${data})`
         );
         continue;
       }
