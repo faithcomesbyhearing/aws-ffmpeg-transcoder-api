@@ -4,20 +4,10 @@ phases:
   install:
     runtime-versions:
       nodejs: 22
-    commands:
-      - echo "Installing Terraform..."
-      - mkdir -p tmp
-      - curl -fsSL https://releases.hashicorp.com/terraform/1.9.7/terraform_1.9.7_linux_amd64.zip -o tmp/terraform.zip
-      - unzip -o tmp/terraform.zip -d tmp/
-      - chmod +x tmp/terraform
-      - mv tmp/terraform /usr/local/bin/
-      - terraform --version
   build:
     commands:
       - echo Build started on `date`
       - pwd
-      - make terraform-init
-      - make terraform
       - make lambdas
       - cd lambdas
       - cd authorizer
@@ -43,6 +33,13 @@ phases:
       - cd ..
       - cd transcode
       - zip -r ../transcode.zip index.js package.json node_modules/
+      - cd ..
+      - cd ..
+      - cd ffmpeg-layer
+      - zip -r ../ffmpeg-layer.zip layer/
+      - cd ..
+      - cd ffprobe-layer
+      - zip -r ../ffprobe-layer.zip layer/
       - cd ..
   post_build:
     commands:
