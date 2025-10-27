@@ -13,7 +13,6 @@
   ],
   "id": "job-1234",
   "status": "PENDING",
-  "keyscount": 2,
   "input": {
     "bucket": "input-bucket",
     "key": "input/video/source.mp4"
