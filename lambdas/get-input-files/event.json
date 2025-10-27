@@ -1,7 +1,6 @@
 {
   "id": "local-testing-event",
   "status": "PENDING",
-  "keyscount": 3,
   "input": {
     "bucket": "local-bucket",
     "key": "input/file1.mp4"
