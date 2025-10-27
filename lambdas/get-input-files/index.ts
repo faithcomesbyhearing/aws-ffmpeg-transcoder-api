@@ -1,6 +1,6 @@
 import { S3, paginateListObjectsV2 } from "@aws-sdk/client-s3";
 import { Handler } from "aws-lambda";
-import { Array, Literal, Number, Record, String, Union } from "runtypes";
+import { Array, Literal, Number, Optional, Record, String, Union } from "runtypes";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import assert from "assert";
@@ -15,7 +15,7 @@ const { TABLE_NAME } = process.env;
 const Job = Record({
   id: String,
   status: Union(Literal("PENDING")),
-  keyscount: Number, 
+  keyscount: Optional(Number),
   input: Record({
     bucket: String,
     key: String,
