@@ -85,7 +85,7 @@ export const handler: Handler = async (event) => {
   for (let j= 0; j<keyslen; j++) {
     let key = keys[j]
     for (let i = 0; i < outputLen; i++) {
-      let format = [ output[i].key, output[i].container,  output[i].codec,  output[i].bitrate].join("|")
+      let format = [output[i].key, output[i].container,  output[i].codec,  output[i].bitrate, output[i].bucket].join("|")
       fanout[index] = {key, index, format, fanoutTotal}
       index++   
     }
