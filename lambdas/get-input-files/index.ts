@@ -45,26 +45,19 @@ export const handler: Handler = async (event) => {
   const result = Job.validate(event);
   if (!result.success) {
     console.error(
-      `Record failed validation: ${result.message} (Event: ${event})`
+      `Record failed validation: ${result.message} (Event: ${JSON.stringify(event)})`
     );
     throw new Error(
-      `Record failed validation: ${result.message} (Event: ${event})`
+      `Record failed validation: ${result.message} (Event: ${JSON.stringify(event)})`
     );
   }
   const job = result.value;
   const keys = [];
   const { bucket: Bucket, key: Prefix } = job.input;
-  let tempCt = 0;
   for await (const output of paginateListObjectsV2({ client: s3 }, { Bucket, Prefix })) {
     for (const key of output.Contents?.map((x) => x.Key!) || []) {
       if (!key.replace(`${Prefix}/`, "").includes("/") && !key.endsWith(".zip")) {
         keys.push(key);
-        // temporary for testing
-        tempCt++
-        if (tempCt > 4){
-          break
-        }
-        // end temporary for testing
       }
     }
   }
@@ -73,12 +66,10 @@ export const handler: Handler = async (event) => {
   job.keyscount = keys.length
 
   // fanout
-  // - transfer to local vars so I can test externally
   let outputLen = job.output.length
   let keyslen = job.keyscount
   let fanoutTotal = keyslen*outputLen; 
   let output = job.output 
-  //--
 
   const fanout = [];
   let index = 0 ;
@@ -94,18 +85,19 @@ export const handler: Handler = async (event) => {
   console.log("fanout")
   console.log(fanout)
   
+  // Save fanout before chunking modifies it
+  const originalFanout = [...fanout];
+  
   // chunk
-  const CHUNKSIZE = 2
-  const chunks =[] 
+  const CHUNKSIZE = 2;
+  const chunks = [];
 
   while (fanout.length > 0) {
     chunks.push(fanout.splice(0, CHUNKSIZE));
   }
 
-  
   console.log("chunks")
   console.log(chunks)
-  //^^^ end local testing
 
   if (isLocal) {
     console.log('Running in local mode - skipping DynamoDB update');
@@ -122,8 +114,7 @@ export const handler: Handler = async (event) => {
       },
       ExpressionAttributeValues: {
         ":remaining": keys.length * job.output.length,
-        // ":files": keys.map((_, index) => ({ index })),
-        ":files": fanout
+        ":files": originalFanout
       },
     });
   }
