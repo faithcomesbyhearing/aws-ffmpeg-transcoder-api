@@ -66,7 +66,7 @@ export const handler: Handler = async (event) => {
   for (const { key, index, format } of job.chunk) {
     const formatInfo = format.split("|");
     let out_key = formatInfo[0]
-    let output = {"container": formatInfo[1], "codec": formatInfo[2], "bitrate": formatInfo[3] }
+    let output = {"container": formatInfo[1], "codec": formatInfo[2], "bitrate": formatInfo[3], "bucket": formatInfo[4]};
       const basename = path.parse(key).name;
       const ext = {
         mp3: "mp3",
@@ -83,7 +83,7 @@ export const handler: Handler = async (event) => {
           key,
         },
         output: {
-          bucket: job.output[0],
+          bucket: output.bucket,
           key:  outputKey,
           container: formatInfo[1],
           codec: formatInfo[2],
@@ -95,7 +95,7 @@ export const handler: Handler = async (event) => {
 
   for (const file of files) {
     if (isLocal) {
-      console.log(`Local mode: Mocking DynamoDB update for file ${file.index}`);
+      console.log(`Local mode: Mocking DynamoDB update for file ${file.index} with value: ${JSON.stringify(file)}`);
     } else {
       await dynamo.update({
         TableName: TABLE_NAME,

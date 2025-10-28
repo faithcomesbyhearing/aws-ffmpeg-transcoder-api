@@ -3,12 +3,12 @@
     {
       "index": 0,
       "key": "input/video/chunk0.mp4",
-      "format": "xxx"
+      "format": "output/video/chunk0.mp4|mp4|aac|1000000|output-bucket"
     },
     {
       "index": 1,
       "key": "input/video/chunk1.mp4",
-      "format": "xxx"
+      "format": "output/video/chunk1.mp4|mp4|aac|1000000|output-bucket"
     }
   ],
   "id": "job-1234",
