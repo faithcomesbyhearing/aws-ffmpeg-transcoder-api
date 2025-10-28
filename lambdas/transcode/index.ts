@@ -102,23 +102,6 @@ export const handler: Handler<Event> = async (event: Event, context) => {
 
     if (!isTestMode) {
       try {
-        // First, let's see what the current item looks like
-        const currentItem = await dynamo.get({
-          TableName: TABLE_NAME,
-          Key: { id: event.id }
-        });
-
-        console.log(`Updating index ${event.index}, current files array length:`, currentItem.Item?.files?.length || 'undefined');
-        console.log(`Current remaining count:`, currentItem.Item?.remaining || 'undefined');
-
-        if (!currentItem.Item?.files || !Array.isArray(currentItem.Item.files)) {
-          throw new Error(`Files array is missing or not an array. Current files: ${JSON.stringify(currentItem.Item?.files)}`);
-        }
-
-        if (event.index >= currentItem.Item.files.length) {
-          throw new Error(`Index ${event.index} is out of bounds. Files array length: ${currentItem.Item.files.length}`);
-        }
-
         await dynamo.update({
           TableName: TABLE_NAME,
           Key: { id: event.id },
