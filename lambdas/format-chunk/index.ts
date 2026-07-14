@@ -1,6 +1,6 @@
 import { S3, paginateListObjectsV2 } from "@aws-sdk/client-s3";
 import { Handler } from "aws-lambda";
-import { Array, Literal, Number, Record, String, Union } from "runtypes";
+import { Array, Literal, Number, Optional, Record, String, Union } from "runtypes";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import assert from "assert";
@@ -8,6 +8,8 @@ import path from "path";
 
 const s3 = new S3({});
 const dynamo = DynamoDBDocument.from(new DynamoDB({ maxAttempts: 64 }));
+
+const isLocal = process.env.NODE_ENV === 'local';
 
 const { TABLE_NAME } = process.env;
 
@@ -19,7 +21,7 @@ const Job = Record({
   })),
   id: String,
   status: Union(Literal("PENDING")),
-  keyscount: Number,
+  keyscount: Optional(Number),
   input: Record({
     bucket: String,
     key: String,
@@ -49,10 +51,10 @@ export const handler: Handler = async (event) => {
   const result = Job.validate(event);
   if (!result.success) {
     console.error(
-      `Record failed validation: ${result.message} (Key: ${result.key}) (Event: ${event})`
+      `Record failed validation: ${result.message} (Event: ${event})`
     );
     throw new Error(
-      `Record failed validation: ${result.message} (Key: ${result.key}) (Event: ${event})`
+      `Record failed validation: ${result.message} (Event: ${event})`
     );
   }
   const job = result.value;
@@ -64,7 +66,7 @@ export const handler: Handler = async (event) => {
   for (const { key, index, format } of job.chunk) {
     const formatInfo = format.split("|");
     let out_key = formatInfo[0]
-    let output = {"container": formatInfo[1], "codec": formatInfo[2], "bitrate": formatInfo[3] }
+    let output = {"container": formatInfo[1], "codec": formatInfo[2], "bitrate": formatInfo[3], "bucket": formatInfo[4]};
       const basename = path.parse(key).name;
       const ext = {
         mp3: "mp3",
@@ -81,7 +83,7 @@ export const handler: Handler = async (event) => {
           key,
         },
         output: {
-          bucket: job.output[0],
+          bucket: output.bucket,
           key:  outputKey,
           container: formatInfo[1],
           codec: formatInfo[2],
@@ -92,18 +94,22 @@ export const handler: Handler = async (event) => {
   }
 
   for (const file of files) {
-    await dynamo.update({
-      TableName: TABLE_NAME,
-      Key: { id: job.id },
-      ConditionExpression: "attribute_exists(id)",
-      UpdateExpression: `SET #files[${file.index}] = :file`,
-      ExpressionAttributeNames: {
-        "#files": "files",
-      },
-      ExpressionAttributeValues: {
-        ":file": file,
-      },
-    });
+    if (isLocal) {
+      console.log(`Local mode: Mocking DynamoDB update for file ${file.index} with value: ${JSON.stringify(file)}`);
+    } else {
+      await dynamo.update({
+        TableName: TABLE_NAME,
+        Key: { id: job.id },
+        ConditionExpression: "attribute_exists(id)",
+        UpdateExpression: `SET #files[${file.index}] = :file`,
+        ExpressionAttributeNames: {
+          "#files": "files",
+        },
+        ExpressionAttributeValues: {
+          ":file": file,
+        },
+      });
+    }
   }
 
   return files.map((x) => ({ id: job.id, ...x }));

@@ -1,0 +1,29 @@
+{
+  "chunk": [
+    {
+      "index": 0,
+      "key": "input/video/chunk0.mp4",
+      "format": "output/video/chunk0.mp4|mp4|aac|1000000|output-bucket"
+    },
+    {
+      "index": 1,
+      "key": "input/video/chunk1.mp4",
+      "format": "output/video/chunk1.mp4|mp4|aac|1000000|output-bucket"
+    }
+  ],
+  "id": "job-1234",
+  "status": "PENDING",
+  "input": {
+    "bucket": "input-bucket",
+    "key": "input/video/source.mp4"
+  },
+  "output": [
+    {
+      "bucket": "output-bucket",
+      "key": "output/video/chunk0.mp4",
+      "bitrate": 1000000,
+      "container": "mp4",
+      "codec": "aac"
+    }
+  ]
+}

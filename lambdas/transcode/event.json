@@ -1,0 +1,15 @@
+{
+  "id": "local-testing-event",
+  "index": 0,
+  "input": {
+    "bucket": "local-input-bucket",
+    "key": "input/test-audio.wav"
+  },
+  "output": {
+    "bucket": "local-output-bucket",
+    "key": "output/test-audio-128k.mp3",
+    "bitrate": 128000,
+    "container": "mp3",
+    "codec": "mp3"
+  }
+}

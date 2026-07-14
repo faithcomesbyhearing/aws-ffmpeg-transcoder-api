@@ -101,26 +101,32 @@ export const handler: Handler<Event> = async (event: Event, context) => {
     await upload(event.output.bucket, event.output.key, outputFilePath);
 
     if (!isTestMode) {
-      await dynamo.update({
-        TableName: TABLE_NAME,
-        Key: { id: event.id },
-        ConditionExpression: "attribute_exists(id)",
-        UpdateExpression: `SET #remaining = #remaining - :one, #files[${event.index}].#status = :success, files[${event.index}].#input.#duration = :inputDuration, #files[${event.index}].#output.#duration = :outputDuration`,
-        ExpressionAttributeNames: {
-          "#duration": "duration",
-          "#files": "files",
-          "#input": "input",
-          "#output": "output",
-          "#remaining": "remaining",
-          "#status": "status",
-        },
-        ExpressionAttributeValues: {
-          ":one": 1,
-          ":success": "SUCCESS",
-          ":inputDuration": inputDuration,
-          ":outputDuration": outputDuration,
-        },
-      });
+      try {
+        await dynamo.update({
+          TableName: TABLE_NAME,
+          Key: { id: event.id },
+          ConditionExpression: "attribute_exists(id)",
+          UpdateExpression: `SET #remaining = #remaining - :one, #files[${event.index}].#status = :success, #files[${event.index}].#input.#duration = :inputDuration, #files[${event.index}].#output.#duration = :outputDuration`,
+          ExpressionAttributeNames: {
+            "#duration": "duration",
+            "#files": "files",
+            "#input": "input",
+            "#output": "output",
+            "#remaining": "remaining",
+            "#status": "status",
+          },
+          ExpressionAttributeValues: {
+            ":one": 1,
+            ":success": "SUCCESS",
+            ":inputDuration": inputDuration,
+            ":outputDuration": outputDuration,
+          },
+        });
+      } catch (error) {
+        console.error(`Failed to update DynamoDB for index ${event.index}:`, error);
+        console.error(`Event:`, JSON.stringify(event, null, 2));
+        throw error;
+      }
     } else {
       console.log(`🧪 Test mode - env: ${process.env.NODE_ENV} Skipping DynamoDB update for job: ${event.id}, file: ${event.index}`);
       console.log(`   Input duration: ${inputDuration}s, Output duration: ${outputDuration}s`);

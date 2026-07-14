@@ -9,6 +9,8 @@ const dynamo = DynamoDBDocument.from(new DynamoDB({ maxAttempts: 8 }));
 
 const { TABLE_NAME } = process.env;
 
+const isLocal = process.env.NODE_ENV === 'local';
+
 const Input = Record({
   input: Record({
     bucket: String,
@@ -40,19 +42,25 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
     if (!result.success) {
       return {
         statusCode: 400,
-        body: `${result.message} (Key: ${result.key})`,
+        body: `${result.message}`,
       };
     }
     assert(TABLE_NAME, "Missing TABLE_NAME");
     const id = uuid();
-    await dynamo.put({
-      TableName: TABLE_NAME,
-      Item: {
-        id,
-        status: "PENDING",
-        ...result.value,
-      },
-    });
+
+    if (isLocal) {
+      console.log("Running in local mode, skipping DynamoDB put");
+    } else {
+      await dynamo.put({
+        TableName: TABLE_NAME,
+        Item: {
+          id,
+          status: "PENDING",
+          ...result.value,
+        },
+      });
+    }
+
     return {
       id,
       status: "PENDING",

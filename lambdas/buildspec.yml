@@ -1,23 +1,48 @@
 version: 0.2
 
 phases:
+  install:
+    runtime-versions:
+      nodejs: 22
   build:
     commands:
       - echo Build started on `date`
       - pwd
       - make lambdas
       - cd lambdas
-      - cd get-input-files
-      - zip ../get-input-files.zip index.js package.json node_modules/**/*
+      - cd authorizer
+      - zip -r ../authorizer.zip index.js package.json node_modules/
+      - cd ..
+      - cd create-job
+      - zip -r ../create-job.zip index.js package.json node_modules/
+      - cd ..
+      - cd create-zip
+      - zip -r ../create-zip.zip index.js package.json node_modules/
       - cd ..
       - cd format-chunk
-      - zip ../format-chunk.zip index.js package.json node_modules/**/*
+      - zip -r ../format-chunk.zip index.js package.json node_modules/
+      - cd ..
+      - cd get-input-files
+      - zip -r ../get-input-files.zip index.js package.json node_modules/
+      - cd ..
+      - cd get-job
+      - zip -r ../get-job.zip index.js package.json node_modules/
+      - cd ..
+      - cd start-job
+      - zip -r ../start-job.zip index.js dynamodb.js package.json node_modules/
+      - cd ..
+      - cd transcode
+      - zip -r ../transcode.zip index.js package.json node_modules/
       - cd ..
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo Pushing lambda function update... 
-      - aws lambda update-function-code --function-name transcoding-api-get-input-files-w9gxhplj7q9mju3h  --zip-file fileb://./get-input-files.zip
-      # - aws lambda publish-version --function-name transcoding-api-get-input-files-w9gxhplj7q9mju3h
-      - aws lambda update-function-code --function-name transcoding-api-format-chunk-w9gxhplj7q9mju3h  --zip-file fileb://./format-chunk.zip
-      # - aws lambda publish-version --function-name transcoding-api-format-chunk-w9gxhplj7q9mju3h
+      - echo Pushing lambda function update...
+      - aws lambda update-function-code --function-name transcoding-api-authorizer-w9gxhplj7q9mju3h --zip-file fileb://./authorizer.zip
+      - aws lambda update-function-code --function-name transcoding-api-create-job-w9gxhplj7q9mju3h --zip-file fileb://./create-job.zip
+      - aws lambda update-function-code --function-name transcoding-api-create-zip-w9gxhplj7q9mju3h --zip-file fileb://./create-zip.zip
+      - aws lambda update-function-code --function-name transcoding-api-format-chunk-w9gxhplj7q9mju3h --zip-file fileb://./format-chunk.zip
+      - aws lambda update-function-code --function-name transcoding-api-get-input-files-w9gxhplj7q9mju3h --zip-file fileb://./get-input-files.zip
+      - aws lambda update-function-code --function-name transcoding-api-get-job-w9gxhplj7q9mju3h --zip-file fileb://./get-job.zip
+      - aws lambda update-function-code --function-name transcoding-api-start-job-w9gxhplj7q9mju3h --zip-file fileb://./start-job.zip
+      - aws lambda update-function-code --function-name transcoding-api-transcode-w9gxhplj7q9mju3h --zip-file fileb://./transcode.zip

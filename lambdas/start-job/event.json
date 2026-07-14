@@ -1,0 +1,102 @@
+{
+  "Records": [
+    {
+      "eventID": "1",
+      "eventName": "INSERT",
+      "eventVersion": "1.1",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "us-east-1",
+      "dynamodb": {
+        "ApproximateCreationDateTime": 1698163200,
+        "Keys": {
+          "id": {
+            "S": "test-job-123"
+          }
+        },
+        "NewImage": {
+          "id": {
+            "S": "test-job-123"
+          },
+          "status": {
+            "S": "PENDING"
+          },
+          "input": {
+            "M": {
+              "bucket": {
+                "S": "my-input-bucket"
+              },
+              "key": {
+                "S": "input/audio-file.wav"
+              }
+            }
+          },
+          "output": {
+            "L": [
+              {
+                "M": {
+                  "bucket": {
+                    "S": "my-output-bucket"
+                  },
+                  "key": {
+                    "S": "output/audio-file-128k.mp3"
+                  },
+                  "bitrate": {
+                    "N": "128000"
+                  },
+                  "container": {
+                    "S": "mp3"
+                  },
+                  "codec": {
+                    "S": "mp3"
+                  }
+                }
+              },
+              {
+                "M": {
+                  "bucket": {
+                    "S": "my-output-bucket"
+                  },
+                  "key": {
+                    "S": "output/audio-file-64k.mp4"
+                  },
+                  "bitrate": {
+                    "N": "64000"
+                  },
+                  "container": {
+                    "S": "mp4"
+                  },
+                  "codec": {
+                    "S": "aac"
+                  }
+                }
+              },
+              {
+                "M": {
+                  "bucket": {
+                    "S": "my-output-bucket"
+                  },
+                  "key": {
+                    "S": "output/audio-file-32k.webm"
+                  },
+                  "bitrate": {
+                    "N": "32000"
+                  },
+                  "container": {
+                    "S": "webm"
+                  },
+                  "codec": {
+                    "S": "opus"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "SequenceNumber": "111",
+        "SizeBytes": 26,
+        "StreamViewType": "NEW_AND_OLD_IMAGES"
+      },
+      "eventSourceARN": "arn:aws:dynamodb:us-east-1:123456789012:table/TranscodeJobs/stream/2015-06-27T00:48:05.899"
+    }
+  ]
+}

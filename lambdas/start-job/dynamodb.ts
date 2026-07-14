@@ -34,7 +34,13 @@ function sdkToLambdaAttr(a: SdkAttributeValue): LambdaAttributeValue {
         Object.entries(a.M).map(([key, value]) => [key, sdkToLambdaAttr(value)])
       ),
     };
-  return a;
+  if (a.BOOL !== undefined) return { BOOL: a.BOOL };
+  if (a.N) return { N: a.N };
+  if (a.NS) return { NS: a.NS };
+  if (a.NULL) return { NULL: a.NULL };
+  if (a.S) return { S: a.S };
+  if (a.SS) return { SS: a.SS };
+  throw new Error(`Unrecognized attribute value type: ${JSON.stringify(a)}`);
 }
 
 export function unmarshall(
